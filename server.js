@@ -5,6 +5,7 @@ const bodyParser = require("body-parser");
 
 const app = express();
 app.use(cors());
+app.use(express.static("public"));
 app.use(bodyParser.json());
 
 const GROQ_API_KEY = "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";

@@ -1,35 +1,42 @@
-
+const axios = require("axios");
 const express = require("express");
+const cors = require("cors");
 const bodyParser = require("body-parser");
-const fetch = require("node-fetch");
-const path = require("path");
-require("dotenv").config();
 
 const app = express();
-const PORT = 3000;
-
+app.use(cors());
 app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, "public")));
 
-app.post("/ask", async (req, res) => {
-  const prompt = req.body.prompt;
-  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model: "openai/gpt-3.5-turbo",
-      messages: [
-        { role: "system", content: "Você é Servo Tony IA, um coach espiritual cristão. Responda com base na Bíblia, valores cristãos, e sabedoria prática sobre fé, liderança e motivação." },
-        { role: "user", content: prompt }
-      ]
-    })
-  });
+const GROQ_API_KEY = "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";
 
-  const data = await response.json();
-  res.send({ answer: data.choices?.[0]?.message?.content || "Desculpe, não consegui entender. Tente novamente." });
+app.post("/api", async (req, res) => {
+  const prompt = req.body.message;
+
+  try {
+    const response = await axios.post(
+      "https://api.groq.com/openai/v1/chat/completions",
+      {
+        model: "llama3-70b-8192", // ou "mixtral-8x7b-32768"
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.7,
+        max_tokens: 500
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${GROQ_API_KEY}`
+        }
+      }
+    );
+
+    const answer = response.data.choices[0].message.content;
+    res.json({ answer });
+  } catch (error) {
+    console.error("Erro com Groq:", error.response?.data || error.message);
+    res.status(500).json({ answer: "Desculpe, algo deu errado com a IA." });
+  }
 });
 
-app.listen(PORT, () => console.log(`Servidor com Servo Tony IA rodando em http://localhost:${PORT}`));
+app.listen(3000, () => {
+  console.log("Servidor com Groq rodando em http://localhost:3000");
+});
